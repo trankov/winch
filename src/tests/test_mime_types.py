@@ -1,8 +1,8 @@
 import unittest
 
-from . import text, video
-from .text.types import TextMediaType
-from .types import IanaMediaType
+from winch.mime_types import text, video
+from winch.mime_types.text.types import TextMediaType
+from winch.mime_types.types import IanaMediaType
 
 
 class IanaMediaTypeTests(unittest.TestCase):

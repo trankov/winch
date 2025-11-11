@@ -1,0 +1,14 @@
+{
+  "python.testing.cwd": "${workspaceFolder}",
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestEnabled": true,
+  "python.testing.unittestArgs": [
+    "-v",
+    "-s",
+    "./src/tests",
+    "-p",
+    "test_*.py"
+  ],
+  "python.testing.promptToConfigure": false,
+  "python.terminal.activateEnvironment": true
+}
