@@ -1,0 +1,48 @@
+{
+    "exclude": [
+        "**/node_modules",
+        "**/__pycache__",
+        "**/migrations",
+        "**/.venv",
+        "**/venv",
+        "**/env"
+    ],
+    "executionEnvironments": [
+        {
+            "root": ".",
+            "extraPaths": ["."],
+            "pythonVersion": "3.14"
+        }
+    ],
+    "analyzeUnannotatedFunctions": true,
+    "deprecateTypingAliases": true,
+    "enableTypeIgnoreComments": true,
+    "reportAny": "none",
+    "reportExplicitAny": "none",
+    "reportIgnoreCommentWithoutRule": "none",
+    "reportImplicitOverride": "none",
+    "reportImplicitStringConcatenation": "none",
+    "reportImportCycles": "none",
+    "reportIncompatibleMethodOverride": "none",
+    "reportIncompatibleVariableOverride": "none",
+    "reportMissingParameterType": "none",
+    "reportMissingSuperCall": "none",
+    "reportMissingTypeStubs": "hint",
+    "reportMissingTypeArgument": "none",
+    "reportPrivateLocalImportUsage": "none",
+    "reportPrivateUsage": "none",
+    "reportRedeclaration": "none",
+    "reportUnannotatedClassAttribute": "none",
+    "reportUninitializedInstanceVariable": "none",
+    "reportUnknownArgumentType": "none",
+    "reportUnknownMemberType": "none",
+    "reportUnknownParameterType": "none",
+    "reportUnknownVariableType": "none",
+    "reportUnusedCallResult": "none",
+    "reportUnusedImport": "hint",
+    "reportUnusedParameter": "hint",
+    "strictDictionaryInference": false,
+    "strictListInference": false,
+    "strictSetInference": false,
+    "useLibraryCodeForTypes": true
+}

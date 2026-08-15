@@ -1,0 +1,19 @@
+#:schema https://raw.githubusercontent.com/astral-sh/ruff/refs/heads/main/ruff.schema.json
+
+
+extend = "/Users/trankov/Yandex.Disk.localized/py/ruff.toml"
+
+[analyze]
+detect-string-imports = true
+string-imports-min-dots = 2
+
+[format]
+docstring-code-format = true
+docstring-code-line-length = 73
+preview = false
+
+[lint]
+preview = false
+
+[lint.per-file-ignores]
+"__init__.py" = ["F403"]

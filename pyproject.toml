@@ -25,6 +25,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = [
-    "ipykernel>=7.1.0",
-]
+dev = ["ipykernel>=7.1.0", "ruff", "deptry", "ipywidgets"]
+test = ["pytest", "hypothesis"]
+
+[tool.uv]
+default-groups = "all"

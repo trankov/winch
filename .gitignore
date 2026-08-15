@@ -99,3 +99,35 @@ extra_stuff/
 
 *.ipynb
 .cursorignore
+# AI local overrides (do not commit secrets)
+CLAUDE.local.md
+.cursor/*.local.*
+.cursor/**/*.local.*
+# Byte-compiled / cache
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+# Installer / tooling caches
+.ruff_cache/
+.mypy_cache/
+.pytype/
+# Jupyter
+.ipynb_checkpoints/
+# Environments / secrets
+.env
+.env.*
+!.env.example
+testing.env
+.secrets/
+# Scratch / private local trees
+**/___*
+# macOS
+.AppleDouble
+.LSOverride
+._*
+# Editors
+.vscode/
+*~
+*.bak
