@@ -3,29 +3,7 @@ import unittest
 from winch.client import Client
 from winch.operation import Operation, RpcOperation
 
-
-class RecordingAdapter:
-    """Обычный адаптер: запоминает аргументы `send` и отдаёт тело."""
-
-    def __init__(self, response: str) -> None:
-        self.response = response
-        self.method = ''
-        self.url = ''
-        self.headers: dict[str, str] = {}
-        self.body = ''
-
-    def send(
-        self,
-        method: str,
-        url: str,
-        headers: dict[str, str],
-        body: str,
-    ) -> str:
-        self.method = method
-        self.url = url
-        self.headers = headers
-        self.body = body
-        return self.response
+from recording import RecordingHttpTransport
 
 
 class Echo(RpcOperation):
@@ -47,9 +25,9 @@ class BareOperation(Operation):
 
 class RpcCallTests(unittest.TestCase):
     def test_rpc_call_posts_body_and_returns_dict(self) -> None:
-        adapter = RecordingAdapter(response='{"ok": true}')
+        http_transport = RecordingHttpTransport(response='{"ok": true}')
         client = Client(
-            adapter=adapter,
+            http_transport=http_transport,
             base_url='https://api.example.test/v1',
             headers={'X-Token': 'secret'},
         )
@@ -58,11 +36,14 @@ class RpcCallTests(unittest.TestCase):
         reply = echo(text='hello')
 
         self.assertEqual(reply, {'ok': True})
-        self.assertEqual(adapter.method, 'POST')
-        self.assertEqual(adapter.url, 'https://api.example.test/v1/echo')
-        self.assertEqual(adapter.body, '{"text": "hello"}')
+        self.assertEqual(http_transport.method, 'POST')
         self.assertEqual(
-            adapter.headers,
+            http_transport.url,
+            'https://api.example.test/v1/echo',
+        )
+        self.assertEqual(http_transport.body, '{"text": "hello"}')
+        self.assertEqual(
+            http_transport.headers,
             {
                 'X-Token': 'secret',
                 'Content-Type': 'application/json',
@@ -70,9 +51,9 @@ class RpcCallTests(unittest.TestCase):
         )
 
     def test_two_instances_keep_init_defaults(self) -> None:
-        adapter = RecordingAdapter(response='{"id": 1}')
+        http_transport = RecordingHttpTransport(response='{"id": 1}')
         client = Client(
-            adapter=adapter,
+            http_transport=http_transport,
             base_url='https://api.example.test',
         )
         regular = Payout(client=client, kind='regular')
@@ -81,19 +62,22 @@ class RpcCallTests(unittest.TestCase):
         regular(amount=10)
 
         self.assertEqual(
-            adapter.body,
+            http_transport.body,
             '{"kind": "regular", "amount": 10}',
         )
 
         taxed(amount=10)
 
-        self.assertEqual(adapter.body, '{"kind": "tax", "amount": 10}')
+        self.assertEqual(
+            http_transport.body,
+            '{"kind": "tax", "amount": 10}',
+        )
 
     def test_template_client_replaced_by_assignment(self) -> None:
-        first = RecordingAdapter(response='{"n": 1}')
-        second = RecordingAdapter(response='{"n": 2}')
+        first = RecordingHttpTransport(response='{"n": 1}')
+        second = RecordingHttpTransport(response='{"n": 2}')
         TemplatedEcho.client = Client(
-            adapter=first,
+            http_transport=first,
             base_url='https://first.example.test',
         )
         echo = TemplatedEcho()
@@ -104,7 +88,7 @@ class RpcCallTests(unittest.TestCase):
         self.assertEqual(first.url, 'https://first.example.test/echo')
 
         TemplatedEcho.client = Client(
-            adapter=second,
+            http_transport=second,
             base_url='https://second.example.test',
         )
         echo(text='b')
@@ -113,9 +97,9 @@ class RpcCallTests(unittest.TestCase):
         self.assertEqual(second.url, 'https://second.example.test/echo')
 
     def test_inheriting_base_operation_is_allowed(self) -> None:
-        adapter = RecordingAdapter(response='{"ok": true}')
+        http_transport = RecordingHttpTransport(response='{"ok": true}')
         client = Client(
-            adapter=adapter,
+            http_transport=http_transport,
             base_url='https://api.example.test',
         )
         bare = BareOperation(client=client)
@@ -123,8 +107,8 @@ class RpcCallTests(unittest.TestCase):
         reply = bare(flag=True)
 
         self.assertEqual(reply, {'ok': True})
-        self.assertEqual(adapter.method, 'POST')
-        self.assertEqual(adapter.body, '{"flag": true}')
+        self.assertEqual(http_transport.method, 'POST')
+        self.assertEqual(http_transport.body, '{"flag": true}')
 
 
 if __name__ == '__main__':
