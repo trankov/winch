@@ -1,6 +1,6 @@
 """Класс операции и поставляемые шаблоны RPC и REST."""
 
-from http import HTTPStatus
+from http import HTTPMethod, HTTPStatus
 
 from winch.client import AsyncClient, Client, HttpResponse
 from winch.exceptions import WinchHttpException
@@ -10,7 +10,6 @@ from winch.slots import SlotBundle, split_fields
 
 
 CONTENT_TYPE_HEADER = 'Content-Type'
-HTTP_POST = 'POST'
 
 
 def _merge_headers(
@@ -142,7 +141,7 @@ class Operation:
 class RpcOperation(Operation):
     """Шаблон RPC: типично POST и тело."""
 
-    method = HTTP_POST
+    method = HTTPMethod.POST
 
 
 class RestOperation(Operation):
@@ -151,4 +150,4 @@ class RestOperation(Operation):
     def _body_text(self, slot_bundle: SlotBundle) -> str:
         if slot_bundle.document is None:
             return ''
-        return super()._body_text(slot_bundle=slot_bundle)
+        return self.serializer.dumps(document=slot_bundle.document)

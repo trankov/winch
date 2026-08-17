@@ -22,12 +22,13 @@ class Charge(RpcOperation):
         document: object,
         http_response: HttpResponse,
     ) -> object:
-        payload = document if isinstance(document, dict) else {}
-        if payload.get('Success') is not False:
+        if not isinstance(document, dict):
+            return document
+        if document.get('Success') is not False:
             return document
         raise WinchRefusalException(
-            message=str(payload['Message']),
-            code=payload['Code'],
+            message=str(document['Message']),
+            code=document['Code'],
             http_response=http_response,
         )
 

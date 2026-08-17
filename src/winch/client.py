@@ -47,16 +47,12 @@ class ClientPlugin(Protocol):
     def wrap_sync(
         self,
         http_transport: HttpTransportAdapter,
-    ) -> HttpTransportAdapter:
-        """Обернуть синхронный транспорт."""
-        ...
+    ) -> HttpTransportAdapter: ...
 
     def wrap_async(
         self,
         http_transport: AsyncHttpTransportAdapter,
-    ) -> AsyncHttpTransportAdapter:
-        """Обернуть асинхронный транспорт."""
-        ...
+    ) -> AsyncHttpTransportAdapter: ...
 
 
 class Client:
