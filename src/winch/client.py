@@ -1,6 +1,6 @@
 """Клиент внешнего API: HTTP-транспорт, база URL и заголовки."""
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -41,6 +41,24 @@ class AsyncHttpTransportAdapter(Protocol):
         ...
 
 
+class ClientPlugin(Protocol):
+    """Плагин клиента: оборачивает `send`, не операцию."""
+
+    def wrap_sync(
+        self,
+        http_transport: HttpTransportAdapter,
+    ) -> HttpTransportAdapter:
+        """Обернуть синхронный транспорт."""
+        ...
+
+    def wrap_async(
+        self,
+        http_transport: AsyncHttpTransportAdapter,
+    ) -> AsyncHttpTransportAdapter:
+        """Обернуть асинхронный транспорт."""
+        ...
+
+
 class Client:
     """Синхронный живой экземпляр для одного внешнего API."""
 
@@ -49,8 +67,12 @@ class Client:
         http_transport: HttpTransportAdapter,
         base_url: str,
         headers: Mapping[str, str] | None = None,
+        plugins: Sequence[ClientPlugin] = (),
     ) -> None:
-        self.http_transport = http_transport
+        bound_transport = http_transport
+        for plugin in plugins:
+            bound_transport = plugin.wrap_sync(http_transport=bound_transport)
+        self.http_transport = bound_transport
         self.base_url = base_url
         self.headers = dict(headers or {})
 
@@ -63,7 +85,11 @@ class AsyncClient:
         http_transport: AsyncHttpTransportAdapter,
         base_url: str,
         headers: Mapping[str, str] | None = None,
+        plugins: Sequence[ClientPlugin] = (),
     ) -> None:
-        self.http_transport = http_transport
+        bound_transport = http_transport
+        for plugin in plugins:
+            bound_transport = plugin.wrap_async(http_transport=bound_transport)
+        self.http_transport = bound_transport
         self.base_url = base_url
         self.headers = dict(headers or {})

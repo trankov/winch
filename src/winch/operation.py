@@ -59,7 +59,9 @@ class Operation:
 
     def __call__(self, **fields: object) -> object:
         """Kwargs — слоты и документ тела; ответ — объект сериализатора."""
-        bound_client = self._bound_client()
+        bound_client = self._client or type(self).client
+        if bound_client is None:
+            raise TypeError('client is required')
         prepared_request = self._prepare_request(
             bound_client=bound_client,
             fields=fields,
@@ -76,6 +78,14 @@ class Operation:
             ),
         )
 
+    def read_document(
+        self,
+        document: object,
+        http_response: HttpResponse,
+    ) -> object:
+        """Тело при успешном статусе: значение или исключение автора."""
+        return document
+
     async def _call_async(
         self,
         bound_client: AsyncClient,
@@ -86,12 +96,6 @@ class Operation:
             prepared_request=prepared_request,
         )
         return self._read_body(http_response=http_response)
-
-    def _bound_client(self) -> Client | AsyncClient:
-        bound_client = self._client or type(self).client
-        if bound_client is None:
-            raise TypeError('client is required')
-        return bound_client
 
     def _prepare_request(
         self,
@@ -119,7 +123,9 @@ class Operation:
         )
 
     def _body_text(self, slot_bundle: SlotBundle) -> str:
-        return self.serializer.dumps(slot_bundle.body)
+        if slot_bundle.document is not None:
+            return self.serializer.dumps(document=slot_bundle.document)
+        return self.serializer.dumps(document=slot_bundle.body)
 
     def _read_body(self, http_response: HttpResponse) -> object:
         if not _status_is_success(
@@ -127,7 +133,10 @@ class Operation:
             success_statuses=self.success_statuses,
         ):
             raise WinchHttpException(http_response=http_response)
-        return self.serializer.loads(http_response.body)
+        return self.read_document(
+            document=self.serializer.loads(http_response.body),
+            http_response=http_response,
+        )
 
 
 class RpcOperation(Operation):
@@ -140,4 +149,6 @@ class RestOperation(Operation):
     """Шаблон REST: HTTP-метод задаёт каждая операция."""
 
     def _body_text(self, slot_bundle: SlotBundle) -> str:
-        return ''
+        if slot_bundle.document is None:
+            return ''
+        return super()._body_text(slot_bundle=slot_bundle)

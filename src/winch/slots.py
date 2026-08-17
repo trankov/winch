@@ -1,4 +1,4 @@
-"""Слоты path, query и header как аннотации скаляров."""
+"""Слоты path, query, header и один документ тела."""
 
 from typing import get_origin
 from urllib.parse import quote, urlencode
@@ -16,6 +16,10 @@ class Header[Scalar]:
     """Слот заголовка: скаляр в заголовок запроса."""
 
 
+class Body[Document]:
+    """Слот тела: один документ, не склейка полей."""
+
+
 class SlotBundle:
     """Аргументы вызова, разложенные по слотам HTTP."""
 
@@ -24,6 +28,7 @@ class SlotBundle:
         self.query: dict[str, object] = {}
         self.header: dict[str, object] = {}
         self.body: dict[str, object] = {}
+        self.document: object | None = None
 
     def url(self, base_url: str, path: str) -> str:
         """База клиента, путь со слотами и строка query."""
@@ -45,10 +50,18 @@ class SlotBundle:
         }
         for name, field_value in merged.items():
             kind = slot_kinds.get(name)
+            if kind is Body:
+                self._put_document(field_value=field_value)
+                continue
             if kind is None:
                 self.body[name] = field_value
                 continue
             targets[kind][name] = field_value
+
+    def _put_document(self, field_value: object) -> None:
+        if self.document is not None:
+            raise TypeError('only one Body document')
+        self.document = field_value
 
     def _filled_path(self, path: str) -> str:
         return path.format(
@@ -77,19 +90,17 @@ class SlotBundle:
         return f'?{encoded}'
 
 
-def _kind_annotations(ancestor: type) -> dict[str, type]:
-    collected: dict[str, type] = {}
-    for name, annotation in getattr(ancestor, '__annotations__', {}).items():
-        origin = get_origin(annotation) or annotation
-        if origin in {Path, Query, Header}:
-            collected[name] = origin
-    return collected
-
-
 def _slot_kinds(operation_type: type) -> dict[str, type]:
     collected: dict[str, type] = {}
     for ancestor in reversed(operation_type.__mro__):
-        collected.update(_kind_annotations(ancestor=ancestor))
+        for name, annotation in getattr(
+            ancestor,
+            '__annotations__',
+            {},
+        ).items():
+            origin = get_origin(annotation) or annotation
+            if origin in {Path, Query, Header, Body}:
+                collected[name] = origin
     return collected
 
 
