@@ -99,8 +99,18 @@ extra_stuff/
 
 *.ipynb
 .cursorignore
-# AI local overrides (do not commit secrets)
+# AI / agent tooling and session (local only)
+.agents/
+.claude/
+.codex/
+.mcp.json
+AGENTS.md
+CLAUDE.md
 CLAUDE.local.md
+HANDOFF.md
+.scratch/
+docs/agents/
+CONCEPT.md
 .cursor/*.local.*
 .cursor/**/*.local.*
 # Byte-compiled / cache
