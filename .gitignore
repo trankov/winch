@@ -111,6 +111,8 @@ HANDOFF.md
 .scratch/
 docs/agents/
 CONCEPT.md
+CONTEXT.md
+docs/adr/
 .cursor/*.local.*
 .cursor/**/*.local.*
 # Byte-compiled / cache
