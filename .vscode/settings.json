@@ -1,4 +1,5 @@
 {
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
   "python.testing.cwd": "${workspaceFolder}",
   "python.testing.pytestEnabled": false,
   "python.testing.unittestEnabled": true,
@@ -10,5 +11,9 @@
     "test_*.py"
   ],
   "python.testing.promptToConfigure": false,
-  "python.terminal.activateEnvironment": true
+  "python.terminal.activateEnvironment": true,
+  "flake8.enabled": true,
+  "flake8.importStrategy": "fromEnvironment",
+  "flake8.cwd": "${workspaceFolder}",
+  "flake8.ignorePatterns": [".venv/**", "**/__pycache__/**"]
 }

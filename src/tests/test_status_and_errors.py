@@ -1,11 +1,10 @@
 import unittest
 from http import HTTPStatus
 
+from tests.recording import BrokenHttpTransport, RecordingHttpTransport
 from winch.client import Client
 from winch.exceptions import WinchHttpException, WinchNetworkException
 from winch.operation import RpcOperation
-
-from recording import BrokenHttpTransport, RecordingHttpTransport
 
 
 EXAMPLE_API = 'https://api.example.test'

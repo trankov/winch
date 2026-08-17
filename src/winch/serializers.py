@@ -1,7 +1,7 @@
 """Сериализаторы тела: dict по умолчанию и dataclass явно."""
 
 import json
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict
 from typing import Protocol
 
 
@@ -20,6 +20,23 @@ class Serializer(Protocol):
     def loads(self, body: str) -> object:
         """Прочитать документ из строки тела."""
         ...
+
+
+def _schema_fields(document: object) -> dict[str, object]:
+    """
+    Поля документа как `dict` со строковыми ключами.
+
+    Иначе `object` нельзя раскрыть через `**` в конструктор
+    schema.
+    """
+    if not isinstance(document, dict):
+        raise TypeError('document must be a dict')
+    fields: dict[str, object] = {}
+    for name, field_value in document.items():
+        if not isinstance(name, str):
+            raise TypeError('document keys must be strings')
+        fields[name] = field_value
+    return fields
 
 
 class DictJsonSerializer:
@@ -43,13 +60,11 @@ class DataclassJsonSerializer:
         self.schema = schema
 
     def dumps(self, document: object) -> str:
-        dataclass_document = document
-        if not is_dataclass(dataclass_document) or isinstance(
-            dataclass_document,
-            type,
-        ):
-            dataclass_document = self.schema(**document)
-        return json.dumps(asdict(dataclass_document))
+        return json.dumps(
+            asdict(self.schema(**_schema_fields(document=document))),
+        )
 
     def loads(self, body: str) -> object:
-        return self.schema(**json.loads(body))
+        return self.schema(
+            **_schema_fields(document=json.loads(body)),
+        )

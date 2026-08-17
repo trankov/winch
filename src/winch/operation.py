@@ -6,11 +6,7 @@ from winch.client import AsyncClient, Client, HttpResponse
 from winch.exceptions import WinchHttpException
 from winch.http_call import PreparedRequest, send_async, send_sync
 from winch.serializers import DictJsonSerializer
-from winch.slots import (
-    SlotBundle,
-    collect_slot_kinds,
-    split_fields,
-)
+from winch.slots import SlotBundle, split_fields
 
 
 CONTENT_TYPE_HEADER = 'Content-Type'
@@ -103,7 +99,7 @@ class Operation:
         fields: dict[str, object],
     ) -> PreparedRequest:
         slot_bundle = split_fields(
-            slot_kinds=collect_slot_kinds(operation_type=type(self)),
+            operation_type=type(self),
             merged={**self._defaults, **fields},
         )
         body = self._body_text(slot_bundle=slot_bundle)
@@ -123,8 +119,6 @@ class Operation:
         )
 
     def _body_text(self, slot_bundle: SlotBundle) -> str:
-        if isinstance(self, RestOperation):
-            return ''
         return self.serializer.dumps(slot_bundle.body)
 
     def _read_body(self, http_response: HttpResponse) -> object:
@@ -144,3 +138,6 @@ class RpcOperation(Operation):
 
 class RestOperation(Operation):
     """Шаблон REST: HTTP-метод задаёт каждая операция."""
+
+    def _body_text(self, slot_bundle: SlotBundle) -> str:
+        return ''

@@ -33,6 +33,23 @@ class SlotBundle:
         )
         return f'{joined}{self._query_suffix()}'
 
+    def take(
+        self,
+        slot_kinds: dict[str, type],
+        merged: dict[str, object],
+    ) -> None:
+        targets = {
+            Path: self.path,
+            Query: self.query,
+            Header: self.header,
+        }
+        for name, field_value in merged.items():
+            kind = slot_kinds.get(name)
+            if kind is None:
+                self.body[name] = field_value
+                continue
+            targets[kind][name] = field_value
+
     def _filled_path(self, path: str) -> str:
         return path.format(
             **{
@@ -69,8 +86,7 @@ def _kind_annotations(ancestor: type) -> dict[str, type]:
     return collected
 
 
-def collect_slot_kinds(operation_type: type) -> dict[str, type]:
-    """Собрать слоты с класса операции и его шаблонов."""
+def _slot_kinds(operation_type: type) -> dict[str, type]:
     collected: dict[str, type] = {}
     for ancestor in reversed(operation_type.__mro__):
         collected.update(_kind_annotations(ancestor=ancestor))
@@ -78,20 +94,13 @@ def collect_slot_kinds(operation_type: type) -> dict[str, type]:
 
 
 def split_fields(
-    slot_kinds: dict[str, type],
+    operation_type: type,
     merged: dict[str, object],
 ) -> SlotBundle:
     """Разложить kwargs: слоты отдельно, остальное — тело."""
-    bundle = SlotBundle()
-    targets = {
-        Path: bundle.path,
-        Query: bundle.query,
-        Header: bundle.header,
-    }
-    for name, field_value in merged.items():
-        kind = slot_kinds.get(name)
-        if kind is None:
-            bundle.body[name] = field_value
-            continue
-        targets[kind][name] = field_value
-    return bundle
+    slot_bundle = SlotBundle()
+    slot_bundle.take(
+        slot_kinds=_slot_kinds(operation_type=operation_type),
+        merged=merged,
+    )
+    return slot_bundle

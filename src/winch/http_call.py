@@ -1,5 +1,7 @@
 """Собранный HTTP-запрос и отправка через адаптер."""
 
+from dataclasses import dataclass
+
 from winch.client import (
     AsyncHttpTransportAdapter,
     HttpResponse,
@@ -8,20 +10,14 @@ from winch.client import (
 from winch.exceptions import WinchNetworkException
 
 
+@dataclass(slots=True)
 class PreparedRequest:
     """Поля, которые уходят в `send`."""
 
-    def __init__(
-        self,
-        method: str,
-        url: str,
-        headers: dict[str, str],
-        body: str,
-    ) -> None:
-        self.method = method
-        self.url = url
-        self.headers = headers
-        self.body = body
+    method: str
+    url: str
+    headers: dict[str, str]
+    body: str
 
 
 def send_sync(

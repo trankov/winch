@@ -14,6 +14,7 @@ preview = false
 
 [lint]
 preview = false
+external = ["WPS"]
 
 [lint.per-file-ignores]
 "__init__.py" = ["F403"]

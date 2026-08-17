@@ -1,11 +1,10 @@
 import unittest
 from dataclasses import dataclass
 
+from tests.recording import RecordingHttpTransport
 from winch.client import Client
 from winch.operation import RpcOperation
 from winch.serializers import DataclassJsonSerializer, DictJsonSerializer
-
-from recording import RecordingHttpTransport
 
 
 EXAMPLE_API = 'https://api.example.test'
@@ -22,7 +21,7 @@ class PipeSerializer:
 
     def dumps(self, document: object) -> str:
         pairs = [
-            f'{name}={field_value}' for name, field_value in document.items()
+            f'{name}={field_value}' for name, field_value in document.items()  # pyright: ignore[reportAttributeAccessIssue]
         ]
         return '|'.join(pairs)
 

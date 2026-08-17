@@ -10,7 +10,7 @@
     "executionEnvironments": [
         {
             "root": ".",
-            "extraPaths": ["."],
+            "extraPaths": [".", "src"],
             "pythonVersion": "3.14"
         }
     ],

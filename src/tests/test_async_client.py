@@ -1,10 +1,9 @@
 import inspect
 import unittest
 
+from tests.recording import RecordingAsyncHttpTransport, RecordingHttpTransport
 from winch.client import AsyncClient, Client
 from winch.operation import RpcOperation
-
-from recording import RecordingAsyncHttpTransport, RecordingHttpTransport
 
 
 EXAMPLE_API = 'https://api.example.test/v1'
@@ -25,7 +24,7 @@ class AsyncClientTests(unittest.IsolatedAsyncioTestCase):
             ),
         )
 
-        reply = await echo(text='hello')
+        reply = await echo(text='hello')  # pyright: ignore[reportGeneralTypeIssues]
 
         self.assertEqual(reply, {'ok': True})
         self.assertEqual(http_transport.method, 'POST')
@@ -54,7 +53,7 @@ class AsyncClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(inspect.iscoroutine(pending))
         self.assertNotIsInstance(sync_client, AsyncClient)
         self.assertNotIsInstance(async_client, Client)
-        pending.close()
+        pending.close()  # pyright: ignore[reportAttributeAccessIssue]
 
 
 if __name__ == '__main__':

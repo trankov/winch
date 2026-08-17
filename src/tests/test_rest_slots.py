@@ -1,10 +1,9 @@
 import unittest
 
+from tests.recording import RecordingHttpTransport
 from winch.client import Client
 from winch.operation import RestOperation, RpcOperation
 from winch.slots import Header, Path, Query
-
-from recording import RecordingHttpTransport
 
 
 EXAMPLE_API = 'https://api.example.test'

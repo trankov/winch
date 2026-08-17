@@ -1,9 +1,8 @@
 import unittest
 
+from tests.recording import RecordingHttpTransport
 from winch.client import Client
 from winch.operation import Operation, RpcOperation
-
-from recording import RecordingHttpTransport
 
 
 class Echo(RpcOperation):
