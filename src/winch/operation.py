@@ -1,12 +1,12 @@
-"""Класс операции и поставляемые шаблоны RPC и REST."""
+"""Класс операции и базовые классы RPC и REST."""
 
 from http import HTTPMethod, HTTPStatus
 
 from winch.client import AsyncClient, Client, HttpResponse
 from winch.exceptions import WinchHttpException
 from winch.http_call import PreparedRequest, send_async, send_sync
+from winch.params import RequestParams, split_fields
 from winch.serializers import DictJsonSerializer
-from winch.slots import SlotBundle, split_fields
 
 
 CONTENT_TYPE_HEADER = 'Content-Type'
@@ -14,7 +14,7 @@ CONTENT_TYPE_HEADER = 'Content-Type'
 
 def _merge_headers(
     client_headers: dict[str, str],
-    slot_headers: dict[str, object],
+    request_headers: dict[str, object],
     content_type: str,
     has_body: bool,
 ) -> dict[str, str]:
@@ -22,7 +22,7 @@ def _merge_headers(
         **client_headers,
         **{
             name: str(field_value)
-            for name, field_value in slot_headers.items()
+            for name, field_value in request_headers.items()
         },
     }
     if has_body:
@@ -57,7 +57,7 @@ class Operation:
         self._defaults = defaults
 
     def __call__(self, **fields: object) -> object:
-        """Kwargs — слоты и документ тела; ответ — объект сериализатора."""
+        """Kwargs — параметры и тело; ответ — объект сериализатора."""
         bound_client = self._client or type(self).client
         if bound_client is None:
             raise TypeError('client is required')
@@ -101,30 +101,30 @@ class Operation:
         bound_client: Client | AsyncClient,
         fields: dict[str, object],
     ) -> PreparedRequest:
-        slot_bundle = split_fields(
+        request_params = split_fields(
             operation_type=type(self),
             merged={**self._defaults, **fields},
         )
-        body = self._body_text(slot_bundle=slot_bundle)
+        body = self._body_text(request_params=request_params)
         return PreparedRequest(
             method=self.method,
-            url=slot_bundle.url(
+            url=request_params.url(
                 base_url=bound_client.base_url,
                 path=self.path,
             ),
             headers=_merge_headers(
                 client_headers=bound_client.headers,
-                slot_headers=slot_bundle.header,
+                request_headers=request_params.header,
                 content_type=self.serializer.content_type,
                 has_body=bool(body),
             ),
             body=body,
         )
 
-    def _body_text(self, slot_bundle: SlotBundle) -> str:
-        if slot_bundle.document is not None:
-            return self.serializer.dumps(document=slot_bundle.document)
-        return self.serializer.dumps(document=slot_bundle.body)
+    def _body_text(self, request_params: RequestParams) -> str:
+        if request_params.document is not None:
+            return self.serializer.dumps(document=request_params.document)
+        return self.serializer.dumps(document=request_params.body)
 
     def _read_body(self, http_response: HttpResponse) -> object:
         if not _status_is_success(
@@ -139,15 +139,15 @@ class Operation:
 
 
 class RpcOperation(Operation):
-    """Шаблон RPC: типично POST и тело."""
+    """RPC: типично POST и тело."""
 
     method = HTTPMethod.POST
 
 
 class RestOperation(Operation):
-    """Шаблон REST: HTTP-метод задаёт каждая операция."""
+    """REST: HTTP-метод задаёт каждая операция."""
 
-    def _body_text(self, slot_bundle: SlotBundle) -> str:
-        if slot_bundle.document is None:
+    def _body_text(self, request_params: RequestParams) -> str:
+        if request_params.document is None:
             return ''
-        return self.serializer.dumps(document=slot_bundle.document)
+        return self.serializer.dumps(document=request_params.document)

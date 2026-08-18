@@ -1,27 +1,33 @@
-"""Слоты path, query, header и один документ тела."""
+"""Параметры path, query, header и одно тело запроса."""
 
 from typing import get_origin
 from urllib.parse import quote, urlencode
 
 
 class Path[Scalar]:
-    """Слот пути: скаляр в сегмент URL."""
+    """Параметр пути: скаляр в сегмент URL."""
 
 
 class Query[Scalar]:
-    """Слот query: скаляр в строку запроса."""
+    """Query-параметр: скаляр в строку запроса."""
 
 
 class Header[Scalar]:
-    """Слот заголовка: скаляр в заголовок запроса."""
+    """Заголовок: скаляр в заголовок запроса."""
 
 
 class Body[Document]:
-    """Слот тела: один документ, не склейка полей."""
+    """Тело запроса: один документ, не склейка полей."""
 
 
-class SlotBundle:
-    """Аргументы вызова, разложенные по слотам HTTP."""
+class RequestParams:
+    """Аргументы, разложенные по path, query, header и body."""
+
+    path: dict[str, object]
+    query: dict[str, object]
+    header: dict[str, object]
+    body: dict[str, object]
+    document: object | None
 
     def __init__(self) -> None:
         self.path: dict[str, object] = {}
@@ -31,7 +37,7 @@ class SlotBundle:
         self.document: object | None = None
 
     def url(self, base_url: str, path: str) -> str:
-        """База клиента, путь со слотами и строка query."""
+        """База клиента, path с параметрами и строка query."""
         joined = self._join_base(
             base_url=base_url,
             path=self._filled_path(path=path),
@@ -40,7 +46,7 @@ class SlotBundle:
 
     def take(
         self,
-        slot_kinds: dict[str, type],
+        kinds: dict[str, type],
         merged: dict[str, object],
     ) -> None:
         targets = {
@@ -49,7 +55,7 @@ class SlotBundle:
             Header: self.header,
         }
         for name, field_value in merged.items():
-            kind = slot_kinds.get(name)
+            kind = kinds.get(name)
             if kind is Body:
                 self._put_document(field_value=field_value)
                 continue
@@ -90,7 +96,7 @@ class SlotBundle:
         return f'?{encoded}'
 
 
-def _slot_kinds(operation_type: type) -> dict[str, type]:
+def _param_kinds(operation_type: type) -> dict[str, type]:
     collected: dict[str, type] = {}
     for ancestor in reversed(operation_type.__mro__):
         for name, annotation in getattr(
@@ -107,11 +113,11 @@ def _slot_kinds(operation_type: type) -> dict[str, type]:
 def split_fields(
     operation_type: type,
     merged: dict[str, object],
-) -> SlotBundle:
-    """Разложить kwargs: слоты отдельно, остальное — тело."""
-    slot_bundle = SlotBundle()
-    slot_bundle.take(
-        slot_kinds=_slot_kinds(operation_type=operation_type),
+) -> RequestParams:
+    """Разложить kwargs: параметры отдельно, остальное — тело."""
+    request_params = RequestParams()
+    request_params.take(
+        kinds=_param_kinds(operation_type=operation_type),
         merged=merged,
     )
-    return slot_bundle
+    return request_params

@@ -1,12 +1,8 @@
-"""Собранный HTTP-запрос и отправка через адаптер."""
+"""Собранный HTTP-запрос и отправка через транспорт."""
 
 from dataclasses import dataclass
 
-from winch.client import (
-    AsyncHttpTransportAdapter,
-    HttpResponse,
-    HttpTransportAdapter,
-)
+from winch.client import AsyncHttpTransport, HttpResponse, HttpTransport
 from winch.exceptions import WinchNetworkException
 
 
@@ -21,7 +17,7 @@ class PreparedRequest:
 
 
 def send_sync(
-    http_transport: HttpTransportAdapter,
+    http_transport: HttpTransport,
     prepared_request: PreparedRequest,
 ) -> HttpResponse:
     """Синхронный `send`; сбой транспорта — ошибка сети."""
@@ -37,7 +33,7 @@ def send_sync(
 
 
 async def send_async(
-    http_transport: AsyncHttpTransportAdapter,
+    http_transport: AsyncHttpTransport,
     prepared_request: PreparedRequest,
 ) -> HttpResponse:
     """Асинхронный `send`; сбой транспорта — ошибка сети."""

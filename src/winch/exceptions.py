@@ -1,4 +1,4 @@
-"""Исключения этажей сети, HTTP и отказа в теле."""
+"""Исключения этажей сети, HTTP и ошибки в теле ответа."""
 
 from winch.client import HttpResponse
 
@@ -24,8 +24,8 @@ class WinchHttpException(Exception):
         super().__init__(f'HTTP {http_response.status}')
 
 
-class WinchRefusalException(Exception):
-    """Отказ в теле ответа при успешном HTTP-статусе."""
+class WinchBodyException(Exception):
+    """Ошибка, закодированная в теле ответа при успешном HTTP-статусе."""
 
     message: str
     code: str | int

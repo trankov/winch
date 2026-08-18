@@ -3,7 +3,7 @@ import unittest
 from tests.recording import RecordingHttpTransport
 from winch.client import Client
 from winch.operation import RestOperation, RpcOperation
-from winch.slots import Header, Path, Query
+from winch.params import Header, Path, Query
 
 
 EXAMPLE_API = 'https://api.example.test'
@@ -22,8 +22,8 @@ class Echo(RpcOperation):
     locale: Path[str]
 
 
-class RestSlotsTests(unittest.TestCase):
-    def test_rest_slots_fill_path_query_header(self) -> None:
+class RestParamsTests(unittest.TestCase):
+    def test_rest_params_fill_path_query_header(self) -> None:
         http_transport = RecordingHttpTransport(response='{"name": "Ada"}')
         get_user = GetUser(
             client=Client(

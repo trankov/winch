@@ -13,8 +13,8 @@ class HttpResponse:
     body: str
 
 
-class HttpTransportAdapter(Protocol):
-    """Синхронный адаптер HTTP-транспорта."""
+class HttpTransport(Protocol):
+    """Синхронный HTTP-транспорт: обязателен `send`."""
 
     def send(
         self,
@@ -27,8 +27,8 @@ class HttpTransportAdapter(Protocol):
         ...
 
 
-class AsyncHttpTransportAdapter(Protocol):
-    """Асинхронный адаптер HTTP-транспорта."""
+class AsyncHttpTransport(Protocol):
+    """Асинхронный HTTP-транспорт: обязателен `send`."""
 
     async def send(
         self,
@@ -46,13 +46,13 @@ class ClientPlugin(Protocol):
 
     def wrap_sync(
         self,
-        http_transport: HttpTransportAdapter,
-    ) -> HttpTransportAdapter: ...
+        http_transport: HttpTransport,
+    ) -> HttpTransport: ...
 
     def wrap_async(
         self,
-        http_transport: AsyncHttpTransportAdapter,
-    ) -> AsyncHttpTransportAdapter: ...
+        http_transport: AsyncHttpTransport,
+    ) -> AsyncHttpTransport: ...
 
 
 class Client:
@@ -60,7 +60,7 @@ class Client:
 
     def __init__(
         self,
-        http_transport: HttpTransportAdapter,
+        http_transport: HttpTransport,
         base_url: str,
         headers: Mapping[str, str] | None = None,
         plugins: Sequence[ClientPlugin] = (),
@@ -78,7 +78,7 @@ class AsyncClient:
 
     def __init__(
         self,
-        http_transport: AsyncHttpTransportAdapter,
+        http_transport: AsyncHttpTransport,
         base_url: str,
         headers: Mapping[str, str] | None = None,
         plugins: Sequence[ClientPlugin] = (),

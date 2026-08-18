@@ -1,10 +1,15 @@
 import unittest
 from dataclasses import dataclass
+from typing import TypedDict
 
 from tests.recording import RecordingHttpTransport
 from winch.client import Client
 from winch.operation import RpcOperation
-from winch.serializers import DataclassJsonSerializer, DictJsonSerializer
+from winch.serializers import (
+    DataclassJsonSerializer,
+    DictJsonSerializer,
+    TypedDictJsonSerializer,
+)
 
 
 EXAMPLE_API = 'https://api.example.test'
@@ -16,12 +21,18 @@ class EchoDoc:
     text: str
 
 
+class EchoTyped(TypedDict):
+    text: str
+
+
 class PipeSerializer:
     content_type = PIPE_CONTENT_TYPE
 
     def dumps(self, document: object) -> str:
+        if not isinstance(document, dict):
+            raise TypeError('document must be a dict')
         pairs = [
-            f'{name}={field_value}' for name, field_value in document.items()  # pyright: ignore[reportAttributeAccessIssue]
+            f'{name}={field_value}' for name, field_value in document.items()
         ]
         return '|'.join(pairs)
 
@@ -36,6 +47,11 @@ class PipeSerializer:
 class Echo(RpcOperation):
     path = '/echo'
     serializer = DataclassJsonSerializer(schema=EchoDoc)
+
+
+class TypedEcho(RpcOperation):
+    path = '/echo'
+    serializer = TypedDictJsonSerializer(schema=EchoTyped)
 
 
 class PipeTemplate(RpcOperation):
@@ -65,6 +81,26 @@ class SerializerTests(unittest.TestCase):
         reply = echo(text='ping')
 
         self.assertEqual(reply, EchoDoc(text='pong'))
+        self.assertEqual(http_transport.body, '{"text": "ping"}')
+        self.assertEqual(
+            http_transport.headers['Content-Type'],
+            'application/json',
+        )
+
+    def test_typed_dict_roundtrip(self) -> None:
+        http_transport = RecordingHttpTransport(
+            response='{"text": "pong"}',
+        )
+        echo = TypedEcho(
+            client=Client(
+                http_transport=http_transport,
+                base_url=EXAMPLE_API,
+            ),
+        )
+
+        reply = echo(text='ping')
+
+        self.assertEqual(reply, {'text': 'pong'})
         self.assertEqual(http_transport.body, '{"text": "ping"}')
         self.assertEqual(
             http_transport.headers['Content-Type'],

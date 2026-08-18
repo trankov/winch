@@ -1,15 +1,15 @@
 # Winch
 
-Инструмент, чтобы один раз описать HTTP API как операции Python и вызывать их из бизнес-логики, не уходя в HTTP. Класс операции — метод внешнего API, имя в проекте — экземпляр, вызов `get_user(...)` — обычная функция. Клиент держит адаптер, базу URL и секреты; в вызов его не передают. Транспорт (`httpx`, `requests`) ставите сами: Winch даёт адаптеры, без библиотеки — `ImportError` при создании адаптера.
+Инструмент, чтобы один раз описать HTTP API как операции Python и вызывать их из бизнес-логики, не уходя в HTTP. Класс операции — метод внешнего API, имя в проекте — экземпляр, вызов `get_user(...)` — обычная функция. Клиент держит транспорт, базу URL и секреты; в вызов его не передают. Библиотеку (`httpx`, `requests`) ставите сами: Winch даёт транспорт, без библиотеки — `ImportError` при его создании.
 
 ## REST: пользователь GitHub
 
-Слот path: аргумент вызова становится сегментом URL. Ключ не нужен.
+Параметр пути: аргумент вызова становится сегментом URL. Ключ не нужен.
 
 ```python
 from http import HTTPMethod
 
-from winch import Client, HttpxAdapter, Path, RestOperation
+from winch import Client, HttpxTransport, Path, RestOperation
 
 
 class GetUser(RestOperation):
@@ -20,7 +20,7 @@ class GetUser(RestOperation):
 
 get_user = GetUser(
     client=Client(
-        http_transport=HttpxAdapter(),
+        http_transport=HttpxTransport(),
         base_url='https://api.github.com',
     ),
 )
@@ -34,7 +34,7 @@ print(get_user(username='octocat')['login'])
 import asyncio
 from http import HTTPMethod
 
-from winch import AsyncClient, AsyncHttpxAdapter, Path, RestOperation
+from winch import AsyncClient, AsyncHttpxTransport, Path, RestOperation
 
 
 class GetUser(RestOperation):
@@ -45,7 +45,7 @@ class GetUser(RestOperation):
 
 get_user = GetUser(
     client=AsyncClient(
-        http_transport=AsyncHttpxAdapter(),
+        http_transport=AsyncHttpxTransport(),
         base_url='https://api.github.com',
     ),
 )
@@ -53,16 +53,16 @@ get_user = GetUser(
 print(asyncio.run(get_user(username='octocat'))['login'])
 ```
 
-Для `requests` — тот же клиент, но `RequestsAdapter` (только sync).
+Для `requests` — тот же клиент, но `RequestsTransport` (только sync).
 
 ## REST: картинка дня NASA
 
-Слот query. Секрет — дефолт экземпляра, не аргумент вызова. `DEMO_KEY` годится, чтобы сразу увидеть ответ; свой ключ с [api.nasa.gov](https://api.nasa.gov/) подставьте так же.
+Query-параметр. Секрет — дефолт экземпляра, не аргумент вызова. `DEMO_KEY` годится, чтобы сразу увидеть ответ; свой ключ с [api.nasa.gov](https://api.nasa.gov/) подставьте так же.
 
 ```python
 from http import HTTPMethod
 
-from winch import Client, HttpxAdapter, Query, RestOperation
+from winch import Client, HttpxTransport, Query, RestOperation
 
 
 class GetApod(RestOperation):
@@ -73,7 +73,7 @@ class GetApod(RestOperation):
 
 get_apod = GetApod(
     client=Client(
-        http_transport=HttpxAdapter(),
+        http_transport=HttpxTransport(),
         base_url='https://api.nasa.gov',
     ),
     api_key='DEMO_KEY',
@@ -90,10 +90,10 @@ print(apod['title'], apod['url'])
 ```python
 import os
 
-from winch import Client, HttpxAdapter, RpcOperation
+from winch import Client, HttpxTransport, RpcOperation
 
 telegram = Client(
-    http_transport=HttpxAdapter(),
+    http_transport=HttpxTransport(),
     base_url=(
         'https://api.telegram.org/bot'
         f'{os.environ["TELEGRAM_BOT_TOKEN"]}'
@@ -118,7 +118,7 @@ print(send_message(chat_id=os.environ['TELEGRAM_CHAT_ID'], text='hello'))
 
 ## Ошибки ответа
 
-Статус вне успешных (по умолчанию не 2xx) — **`WinchHttpException`**: в исключении весь ответ. Отказ в теле при 2xx сам по себе не ошибка Winch; автор операции решает в `read_document`.
+Статус вне успешных (по умолчанию не 2xx) — **`WinchHttpException`**: в исключении весь ответ. Ошибка в теле при 2xx сама по себе не ошибка Winch; автор операции решает в `read_document`.
 
 Несуществующий пользователь GitHub:
 
@@ -127,7 +127,7 @@ from http import HTTPMethod
 
 from winch import (
     Client,
-    HttpxAdapter,
+    HttpxTransport,
     Path,
     RestOperation,
     WinchHttpException,
@@ -142,7 +142,7 @@ class GetUser(RestOperation):
 
 get_user = GetUser(
     client=Client(
-        http_transport=HttpxAdapter(),
+        http_transport=HttpxTransport(),
         base_url='https://api.github.com',
     ),
 )
@@ -162,10 +162,10 @@ import os
 from winch import (
     Client,
     HttpResponse,
-    HttpxAdapter,
+    HttpxTransport,
     RpcOperation,
     WinchHttpException,
-    WinchRefusalException,
+    WinchBodyException,
 )
 
 
@@ -179,7 +179,7 @@ class TelegramOperation(RpcOperation):
             return document
         if document.get('ok') is not False:
             return document
-        raise WinchRefusalException(
+        raise WinchBodyException(
             message=str(document.get('description', '')),
             code=document.get('error_code', 0),
             http_response=http_response,
@@ -192,7 +192,7 @@ class SendMessage(TelegramOperation):
 
 send_message = SendMessage(
     client=Client(
-        http_transport=HttpxAdapter(),
+        http_transport=HttpxTransport(),
         base_url=(
             'https://api.telegram.org/bot'
             f'{os.environ["TELEGRAM_BOT_TOKEN"]}'
@@ -202,24 +202,24 @@ send_message = SendMessage(
 
 try:
     send_message(chat_id=0, text='hello')
-except WinchRefusalException as refused:
-    print(refused, refused.code)
+except WinchBodyException as body_error:
+    print(body_error, body_error.code)
 except WinchHttpException as http_error:
     print(http_error.http_response.status, http_error.http_response.body)
 ```
 
-Нужен и `WinchHttpException`: у Telegram отказ часто приходит не 2xx, тогда сработает он, а не `read_document`.
+Нужен и `WinchHttpException`: у Telegram ошибка часто приходит не 2xx, тогда сработает он, а не `read_document`.
 
 ## Своя сессия
 
-По умолчанию адаптер открывает транспорт на каждый `send`. Если пул и заголовки соединения уже есть — передайте сессию; адаптер её не закроет.
+По умолчанию транспорт открывает соединение на каждый `send`. Если пул и заголовки соединения уже есть — передайте сессию; транспорт её не закроет.
 
 ```python
 from http import HTTPMethod
 
 import httpx
 
-from winch import Client, HttpxAdapter, Path, RestOperation
+from winch import Client, HttpxTransport, Path, RestOperation
 
 
 class GetUser(RestOperation):
@@ -231,7 +231,7 @@ class GetUser(RestOperation):
 httpx_client = httpx.Client()
 get_user = GetUser(
     client=Client(
-        http_transport=HttpxAdapter(httpx_client=httpx_client),
+        http_transport=HttpxTransport(httpx_client=httpx_client),
         base_url='https://api.github.com',
     ),
 )
@@ -240,4 +240,4 @@ print(get_user(username='octocat')['login'])
 httpx_client.close()
 ```
 
-Для `requests` — `RequestsAdapter(requests_session=session)`.
+Для `requests` — `RequestsTransport(requests_session=session)`.

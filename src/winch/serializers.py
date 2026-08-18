@@ -1,4 +1,4 @@
-"""Сериализаторы тела: dict по умолчанию и dataclass явно."""
+"""Сериализаторы тела: dict по умолчанию, dataclass и TypedDict явно."""
 
 import json
 from dataclasses import asdict
@@ -55,6 +55,7 @@ class DataclassJsonSerializer:
     """Явный сериализатор dataclass через stdlib json."""
 
     content_type = JSON_CONTENT_TYPE
+    schema: type
 
     def __init__(self, schema: type) -> None:
         self.schema = schema
@@ -62,6 +63,26 @@ class DataclassJsonSerializer:
     def dumps(self, document: object) -> str:
         return json.dumps(
             asdict(self.schema(**_schema_fields(document=document))),
+        )
+
+    def loads(self, body: str) -> object:
+        return self.schema(
+            **_schema_fields(document=json.loads(body)),
+        )
+
+
+class TypedDictJsonSerializer:
+    """Явный сериализатор TypedDict через stdlib json."""
+
+    content_type = JSON_CONTENT_TYPE
+    schema: type
+
+    def __init__(self, schema: type) -> None:
+        self.schema = schema
+
+    def dumps(self, document: object) -> str:
+        return json.dumps(
+            self.schema(**_schema_fields(document=document)),
         )
 
     def loads(self, body: str) -> object:

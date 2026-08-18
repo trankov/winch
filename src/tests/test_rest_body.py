@@ -3,7 +3,7 @@ import unittest
 from tests.recording import RecordingHttpTransport
 from winch.client import Client
 from winch.operation import RestOperation
-from winch.slots import Body, Path
+from winch.params import Body, Path
 
 
 EXAMPLE_API = 'https://api.example.test'

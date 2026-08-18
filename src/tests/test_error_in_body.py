@@ -2,12 +2,12 @@ import unittest
 
 from tests.recording import RecordingHttpTransport
 from winch.client import Client, HttpResponse
-from winch.exceptions import WinchRefusalException
+from winch.exceptions import WinchBodyException
 from winch.operation import RpcOperation
 
 
 EXAMPLE_API = 'https://api.example.test'
-REFUSED_BODY = '{"Success": false, "Message": "no funds", "Code": "E1"}'
+ERROR_BODY = '{"Success": false, "Message": "no funds", "Code": "E1"}'
 
 
 class Echo(RpcOperation):
@@ -26,18 +26,18 @@ class Charge(RpcOperation):
             return document
         if document.get('Success') is not False:
             return document
-        raise WinchRefusalException(
+        raise WinchBodyException(
             message=str(document['Message']),
             code=document['Code'],
             http_response=http_response,
         )
 
 
-class RefusalInBodyTests(unittest.TestCase):
-    def test_refusal_body_is_returned_by_default(self) -> None:
+class ErrorInBodyTests(unittest.TestCase):
+    def test_error_body_is_returned_by_default(self) -> None:
         echo = Echo(
             client=Client(
-                http_transport=RecordingHttpTransport(response=REFUSED_BODY),
+                http_transport=RecordingHttpTransport(response=ERROR_BODY),
                 base_url=EXAMPLE_API,
             ),
         )
@@ -49,8 +49,8 @@ class RefusalInBodyTests(unittest.TestCase):
             {'Success': False, 'Message': 'no funds', 'Code': 'E1'},
         )
 
-    def test_operation_turns_refusal_into_exception(self) -> None:
-        http_transport = RecordingHttpTransport(response=REFUSED_BODY)
+    def test_operation_raises_body_exception(self) -> None:
+        http_transport = RecordingHttpTransport(response=ERROR_BODY)
         charge = Charge(
             client=Client(
                 http_transport=http_transport,
@@ -60,15 +60,15 @@ class RefusalInBodyTests(unittest.TestCase):
 
         try:
             charge(amount=10)
-        except WinchRefusalException as refused:
-            self.assertEqual(str(refused), 'no funds')
-            self.assertEqual(refused.code, 'E1')
+        except WinchBodyException as body_error:
+            self.assertEqual(str(body_error), 'no funds')
+            self.assertEqual(body_error.code, 'E1')
             self.assertIs(
-                refused.http_response,
+                body_error.http_response,
                 http_transport.http_response,
             )
         else:
-            self.fail('WinchRefusalException expected')
+            self.fail('WinchBodyException expected')
 
 
 if __name__ == '__main__':

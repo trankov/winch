@@ -1,10 +1,6 @@
 """Плагины клиента: повтор запроса, не ядро операции."""
 
-from winch.client import (
-    AsyncHttpTransportAdapter,
-    HttpResponse,
-    HttpTransportAdapter,
-)
+from winch.client import AsyncHttpTransport, HttpResponse, HttpTransport
 
 
 _RETRY_ATTEMPTS = 2
@@ -13,7 +9,7 @@ _RETRY_ATTEMPTS = 2
 class _RetryingHttpTransport:
     def __init__(
         self,
-        http_transport: HttpTransportAdapter,
+        http_transport: HttpTransport,
         attempts: int,
     ) -> None:
         self._http_transport = http_transport
@@ -44,7 +40,7 @@ class _RetryingHttpTransport:
 class _RetryingAsyncHttpTransport:
     def __init__(
         self,
-        http_transport: AsyncHttpTransportAdapter,
+        http_transport: AsyncHttpTransport,
         attempts: int,
     ) -> None:
         self._http_transport = http_transport
@@ -77,8 +73,8 @@ class RetryPlugin:
 
     def wrap_sync(
         self,
-        http_transport: HttpTransportAdapter,
-    ) -> HttpTransportAdapter:
+        http_transport: HttpTransport,
+    ) -> HttpTransport:
         return _RetryingHttpTransport(
             http_transport=http_transport,
             attempts=_RETRY_ATTEMPTS,
@@ -86,8 +82,8 @@ class RetryPlugin:
 
     def wrap_async(
         self,
-        http_transport: AsyncHttpTransportAdapter,
-    ) -> AsyncHttpTransportAdapter:
+        http_transport: AsyncHttpTransport,
+    ) -> AsyncHttpTransport:
         return _RetryingAsyncHttpTransport(
             http_transport=http_transport,
             attempts=_RETRY_ATTEMPTS,
