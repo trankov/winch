@@ -1,5 +1,6 @@
 """Транспорт HTTP: httpx и requests."""
 
+from collections.abc import Mapping
 from types import TracebackType
 from typing import Protocol, Self
 
@@ -12,14 +13,21 @@ def _body_content(body: str) -> bytes | None:
     return body.encode()
 
 
+def _response_headers(headers: Mapping[str, str]) -> dict[str, str]:
+    return {name.lower(): header for name, header in headers.items()}
+
+
 class _HttpLibResponse(Protocol):
-    """Ответ httpx или requests: код и текст."""
+    """Ответ httpx или requests: код, текст и заголовки."""
 
     @property
     def status_code(self) -> int: ...
 
     @property
     def text(self) -> str: ...
+
+    @property
+    def headers(self) -> Mapping[str, str]: ...
 
 
 class _RequestsSender(Protocol):
@@ -108,6 +116,7 @@ class RequestsTransport:
         return HttpResponse(
             status=http_response.status_code,
             body=http_response.text,
+            headers=_response_headers(headers=http_response.headers),
         )
 
 
@@ -140,6 +149,7 @@ class HttpxTransport:
         return HttpResponse(
             status=http_response.status_code,
             body=http_response.text,
+            headers=_response_headers(headers=http_response.headers),
         )
 
 
@@ -176,6 +186,7 @@ class AsyncHttpxTransport:
             return HttpResponse(
                 status=http_response.status_code,
                 body=http_response.text,
+                headers=_response_headers(headers=http_response.headers),
             )
         async with self._async_client_factory() as httpx_client:
             http_response = await httpx_client.request(
@@ -187,4 +198,5 @@ class AsyncHttpxTransport:
         return HttpResponse(
             status=http_response.status_code,
             body=http_response.text,
+            headers=_response_headers(headers=http_response.headers),
         )

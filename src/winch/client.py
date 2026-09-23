@@ -1,16 +1,22 @@
 """Клиент внешнего API: HTTP-транспорт, база URL и заголовки."""
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 
 @dataclass(slots=True)
 class HttpResponse:
-    """Ответ транспорта: статус и строка тела."""
+    """Ответ транспорта: статус, строка тела и заголовки."""
 
     status: int
     body: str
+    # Имена заголовков в нижнем регистре: так их отдаёт httpx, и так
+    # один поиск находит заголовок у любого транспорта. Повторённый
+    # заголовок приходит одной строкой через запятую. Пустой словарь
+    # по умолчанию — у транспорта автора, который заголовков не
+    # собирает.
+    headers: dict[str, str] = field(default_factory=dict)
 
 
 class HttpTransport(Protocol):
